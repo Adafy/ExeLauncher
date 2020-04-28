@@ -5,7 +5,7 @@ Launch Console and Windows apps packaged as NuGet packages. Keep them auto-updat
 ## Install
 
 ```
-dotnet tool install exelauncher
+dotnet tool install exelauncher --global
 ```
 
 Or optionally clone the source code and build the exe-file.
