@@ -66,7 +66,7 @@ namespace ExeLauncher
         {
             get
             {
-                return GetParameter("cmd");
+                return GetParameter("cmd", true);
             }
         }
 
