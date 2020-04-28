@@ -70,6 +70,46 @@ namespace ExeLauncher
             }
         }
 
+        public static int AutoUpdateInterval
+        {
+            get
+            {
+                var result = GetParameter("interval", true);
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    return 3;
+                }
+
+                return int.Parse(result);
+            }
+        }
+        
+        public static bool Clean
+        {
+            get
+            {
+                var result = GetParameter("clean", true);
+
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    return false;
+                }
+
+                return bool.Parse(result);
+            }
+        }
+        
+        public static string WorkingDir
+        {
+            get
+            {
+                var result = GetParameter("workingdir", true);
+
+                return result;
+            }
+        }
+
         private static string GetParameter(string parameterName, bool allowMissing = false)
         {
             var launchArgument = GetLaunchArguments();
