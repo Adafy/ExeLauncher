@@ -109,6 +109,16 @@ namespace ExeLauncher
                 return result;
             }
         }
+        
+        public static string Arguments
+        {
+            get
+            {
+                var result = GetParameter("args", true);
+
+                return result;
+            }
+        }
 
         private static string GetParameter(string parameterName, bool allowMissing = false)
         {

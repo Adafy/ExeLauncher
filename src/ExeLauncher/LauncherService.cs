@@ -113,6 +113,7 @@ namespace ExeLauncher
 
                     if (!string.IsNullOrWhiteSpace(workingDirectory))
                     {
+
                         startInfo.WorkingDirectory = workingDirectory;
                     }
                     else
@@ -126,6 +127,27 @@ namespace ExeLauncher
                 _logger.Error(e, "Failed to set working directory for process. Default to application's root path {ApplicationRootPath}", _storageService.GetApplicationRootFolderPath());
                 startInfo.WorkingDirectory = _storageService.GetApplicationRootFolderPath();
             }
+            
+            try
+            {
+                if (!Directory.Exists(startInfo.WorkingDirectory))
+                {
+                    throw new Exception();
+                }
+            }
+            catch (Exception)
+            {
+                _logger.Info("Working directory {WorkingDirectory} doesn't exists or it is invalid. Default to version root {VersionRoot}", startInfo.WorkingDirectory, _storageService.GetCurrentRoot());
+
+                startInfo.WorkingDirectory = _storageService.GetCurrentRoot();
+            }
+
+            if (!string.IsNullOrWhiteSpace(Configuration.Arguments))
+            {
+                _logger.Info("Configuration contains arguments. Adding the following into app's launch arguments: {Arguments}.", Configuration.Arguments);
+
+                startInfo.Arguments = Configuration.Arguments;
+            }                    
             
             var process = Process.Start(startInfo);
 
@@ -186,7 +208,7 @@ namespace ExeLauncher
             }
             else
             {
-                throw new Exception("Failed to launch process with executable: " + executable);
+                throw new Exception($"Failed to launch process with executable {executable} and with working directory {startInfo.WorkingDirectory}");
             }
         }
 
@@ -213,7 +235,14 @@ namespace ExeLauncher
             {
                 var pendingVersion = _storageService.GetPendingVersion();
                 var pendingExe = _storageService.GetPendingExe();
+                var pendingRoot = _storageService.GetPendingVersionRootPath();
 
+                if (!string.IsNullOrWhiteSpace(Configuration.LaunchCommand) && !string.IsNullOrWhiteSpace(_storageService.GetCurrentExecutable()) && !string.IsNullOrWhiteSpace(_storageService.GetCurrentRoot()))
+                {
+                    var launchCommand = _storageService.GetCurrentRoot() + "/" + Configuration.LaunchCommand;
+                    _storageService.UpdateCurrentVersionExe(launchCommand);
+                }
+                        
                 if (string.IsNullOrWhiteSpace(pendingExe) || string.IsNullOrWhiteSpace(pendingVersion))
                 {
                     return;
@@ -221,6 +250,7 @@ namespace ExeLauncher
 
                 _storageService.UpdateCurrentVersion(pendingVersion);
                 _storageService.UpdateCurrentVersionExe(pendingExe);
+                _storageService.UpdateCurrentVersionRoot(pendingRoot);
             }
             catch (Exception e)
             {

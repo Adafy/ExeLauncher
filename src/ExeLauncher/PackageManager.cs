@@ -52,6 +52,9 @@ namespace ExeLauncher
 
                 string launchCommand;
 
+                var newVersionPackage = downloadedFiles.Single(x => x.EndsWith(".nupkg"));
+                var newVersionRoot = Path.GetDirectoryName(newVersionPackage);
+                
                 if (string.IsNullOrWhiteSpace(Configuration.LaunchCommand))
                 {
                     try
@@ -69,9 +72,6 @@ namespace ExeLauncher
                 {
                     try
                     {
-                        var newVersionPackage = downloadedFiles.Single(x => x.EndsWith(".nupkg"));
-                        var newVersionRoot = Path.GetDirectoryName(newVersionPackage);
-
                         launchCommand = newVersionRoot + "/" + Configuration.LaunchCommand;
                     }
                     catch (Exception e)
@@ -91,6 +91,7 @@ namespace ExeLauncher
 
                 _logger.Info("Executable to the downloaded version is {ExeFile}", launchCommand);
 
+                await _storageService.UpdatePendingVersionRoot(newVersionRoot);
                 await _storageService.UpdatePendingVersion(version);
                 await _storageService.UpdatePendingExe(launchCommand);
             }

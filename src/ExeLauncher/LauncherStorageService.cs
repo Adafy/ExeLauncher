@@ -25,7 +25,21 @@ namespace ExeLauncher
                 return string.Empty;
             }
 
-            var pendingVersion = File.ReadAllText(pendingVersionFile, Encoding.UTF32);
+            var pendingVersion = File.ReadAllText(pendingVersionFile, Encoding.UTF8);
+
+            return pendingVersion;
+        }
+        
+        public string GetPendingVersionRootPath()
+        {
+            var pendingInstallVersionRootPath = GetPendingInstallVersionRootPath();
+
+            if (!File.Exists(pendingInstallVersionRootPath))
+            {
+                return string.Empty;
+            }
+
+            var pendingVersion = File.ReadAllText(pendingInstallVersionRootPath, Encoding.UTF8);
 
             return pendingVersion;
         }
@@ -39,7 +53,7 @@ namespace ExeLauncher
                 return string.Empty;
             }
 
-            var pendingVersion = File.ReadAllText(pendingExeFile, Encoding.UTF32);
+            var pendingVersion = File.ReadAllText(pendingExeFile, Encoding.UTF8);
 
             return pendingVersion;
         }
@@ -73,6 +87,20 @@ namespace ExeLauncher
             }
 
             return File.ReadAllText(exePathFile, Encoding.UTF8);
+        }
+        
+        public string GetCurrentRoot()
+        {
+            var rootFilePath = GetCurrentVersionRootFilePath();
+
+            if (!File.Exists(rootFilePath))
+            {
+                _logger.Error("Current root file {RootFile} is missing. Unknown state.", rootFilePath);
+
+                throw new Exception($"Current root file {rootFilePath} is missing. Unknown state.");
+            }
+
+            return File.ReadAllText(rootFilePath, Encoding.UTF8);
         }
 
         public void UpdateCurrentVersion(string newVersion)
@@ -144,6 +172,41 @@ namespace ExeLauncher
                 }
             }
         }
+        
+        public void UpdateCurrentVersionRoot(string rootPath)
+        {
+            try
+            {
+                var rootFilePath = GetCurrentVersionRootFilePath();
+                _logger.Info("Updating {RootPathFile} to contain the path to the current version {Root}", rootFilePath, rootPath);
+
+                File.WriteAllText(rootFilePath, rootPath, Encoding.UTF8);
+            }
+            catch (Exception e)
+            {
+                _logger.Error(e,
+                    "Failed to update the current root path. Current root path file: {CurrentExeFile}. Pending root path: {NewVersion}. The pending version file removed to clear any invalid states.",
+                    GetCurrentVersionRootFilePath(), rootPath);
+
+                throw new Exception("Failed to update current version root path");
+            }
+            finally
+            {
+                var pendingInstallVersionRootPath = GetPendingInstallVersionRootPath();
+
+                if (File.Exists(pendingInstallVersionRootPath))
+                {
+                    try
+                    {
+                        File.Delete(pendingInstallVersionRootPath);
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
+            }
+        }
 
         public async Task UpdatePendingVersion(string version)
         {
@@ -151,6 +214,14 @@ namespace ExeLauncher
             _logger.Info("Writing version {DownloadedVersion} to the pending install version file {PendingVersionFile}", version, pendingVersionFile);
 
             await File.WriteAllTextAsync(pendingVersionFile, version, Encoding.UTF8);
+        }
+        
+        public async Task UpdatePendingVersionRoot(string rootPath)
+        {
+            var pendingInstallVersionRootPath = GetPendingInstallVersionRootPath();
+            _logger.Info("Writing root path {RootPath} to the pending install version root path folder {PendingRootPath}", rootPath, pendingInstallVersionRootPath);
+
+            await File.WriteAllTextAsync(pendingInstallVersionRootPath, rootPath, Encoding.UTF8);
         }
 
         public async Task UpdatePendingExe(string launchCommand)
@@ -171,7 +242,10 @@ namespace ExeLauncher
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Failed to clean {AppRootFolder}. Quite likely some files are locked. Close the application or restart the computer and try again.", Configuration.ApplicationRootFolder(_applicationName));
+                _logger.Error(e,
+                    "Failed to clean {AppRootFolder}. Quite likely some files are locked. Close the application or restart the computer and try again.",
+                    Configuration.ApplicationRootFolder(_applicationName));
+
                 throw;
             }
         }
@@ -183,6 +257,13 @@ namespace ExeLauncher
             return Path.Combine(appRootFolder, "pendingversion.txt");
         }
 
+        private string GetPendingInstallVersionRootPath()
+        {
+            var appRootFolder = GetApplicationRootFolderPath();
+
+            return Path.Combine(appRootFolder, "pendingroot.txt");
+        }
+        
         private string GetPendingInstallExeFilePath()
         {
             var appRootFolder = GetApplicationRootFolderPath();
@@ -212,6 +293,13 @@ namespace ExeLauncher
             return Path.Combine(appRootFolder, "current.txt");
         }
 
+        private string GetCurrentVersionRootFilePath()
+        {
+            var appRootFolder = GetApplicationRootFolderPath();
+
+            return Path.Combine(appRootFolder, "currentroot.txt");
+        }
+        
         private string GetExecutableFilePath()
         {
             var appRootFolder = GetApplicationRootFolderPath();
