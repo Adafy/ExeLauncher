@@ -55,7 +55,7 @@ namespace ExeLauncher
                 return appRoot;
             }
 
-            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             
             var result = Path.Combine(appDataPath, applicationName);
 
