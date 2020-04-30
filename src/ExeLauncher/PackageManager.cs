@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NLog;
 using NuGet.Protocol.Core.Types;
+using Weikio.PluginFramework.Catalogs;
 using Weikio.PluginFramework.Catalogs.NuGet.PackageManagement;
 
 namespace ExeLauncher
@@ -17,10 +18,10 @@ namespace ExeLauncher
         private string _nugetConfigPath;
         private readonly LauncherStorageService _storageService;
 
-        public PackageManager(string applicationName, string packageName)
+        public PackageManager(string packageName, LauncherStorageService launcherStorageService)
         {
             _packageName = packageName;
-            _storageService = new LauncherStorageService(applicationName);
+            _storageService = launcherStorageService;
             
             InitializeNuget();
         }
@@ -108,19 +109,44 @@ namespace ExeLauncher
             (SourceRepository Repository, IPackageSearchMetadata Package) result = default;
             var foundPackages = new List<(SourceRepository Repository, IPackageSearchMetadata Package)>();
 
-            await foreach (var foundPackage in _nuGetDownloader.SearchPackagesAsync(_packageName,
-                includePrerelease: true,
-                nugetConfigFilePath: _nugetConfigPath))
+            if (!string.IsNullOrWhiteSpace(Configuration.PackageFeedUrl))
             {
-                foundPackages.Add(foundPackage);
-
-                if (string.Equals(foundPackage.Package.Identity.Id, _packageName, StringComparison.InvariantCultureIgnoreCase))
+                var feed = new NuGetFeed(Configuration.Package, Configuration.PackageFeedUrl)
                 {
-                    result = foundPackage;
+                    Username = Configuration.PackageFeedUsername, Password = Configuration.PackageFeedPassword
+                };
 
-                    break;
+                var packages = await _nuGetDownloader.SearchPackagesAsync(feed, _packageName, 20, includePrerelease: true);
+
+                foreach (var foundPackage in packages)
+                {
+                    foundPackages.Add(foundPackage);
+
+                    if (string.Equals(foundPackage.Package.Identity.Id, _packageName, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        result = foundPackage;
+
+                        break;
+                    }
                 }
             }
+            else
+            {
+                await foreach (var foundPackage in _nuGetDownloader.SearchPackagesAsync(_packageName,
+                    includePrerelease: true,
+                    nugetConfigFilePath: _nugetConfigPath))
+                {
+                    foundPackages.Add(foundPackage);
+
+                    if (string.Equals(foundPackage.Package.Identity.Id, _packageName, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        result = foundPackage;
+
+                        break;
+                    }
+                }
+            }
+
 
             if (result != default)
             {

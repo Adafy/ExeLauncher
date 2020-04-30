@@ -24,10 +24,8 @@ namespace ExeLauncher
             _applicationName = Configuration.ApplicationName;
             _packageName = Configuration.Package;
             _storageService = new LauncherStorageService(_applicationName);
-            _autoUpdater = new AutoUpdater(_applicationName, _packageName);
-            _packageManager = new PackageManager(_applicationName, _packageName);
-
-            _logger.Info("Application root folder is {AppRootFolder}", Configuration.ApplicationRootFolder(_applicationName));
+            _packageManager = new PackageManager(_packageName, _storageService);
+            _autoUpdater = new AutoUpdater(_storageService, _packageManager);
         }
 
         public async Task Launch()

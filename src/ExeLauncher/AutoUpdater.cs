@@ -12,10 +12,10 @@ namespace ExeLauncher
         private Timer _autoUpdateTimer;
         private readonly PackageManager _packageManager;
 
-        public AutoUpdater(string applicationName, string packageName)
+        public AutoUpdater(LauncherStorageService launcherStorageService,  PackageManager packageManager)
         {
-            _storageService = new LauncherStorageService(applicationName);
-            _packageManager = new PackageManager(applicationName, packageName);
+            _storageService = launcherStorageService;
+            _packageManager = packageManager;
         }
 
         public void Start()

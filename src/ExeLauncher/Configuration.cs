@@ -19,7 +19,14 @@ namespace ExeLauncher
         {
             get
             {
-                return GetParameter("app");
+                var result = GetParameter("app", true);
+
+                if (!string.IsNullOrWhiteSpace(result))
+                {
+                    return result;
+                }
+
+                return Package;
             }
         }
 
@@ -120,6 +127,30 @@ namespace ExeLauncher
             }
         }
 
+        public static string PackageFeedUrl
+        {
+            get
+            {
+                return GetParameter("feedurl", true);
+            }
+        }
+
+        public static string PackageFeedUsername
+        {
+            get
+            {
+                return GetParameter("feeduser", true);
+            }
+        }
+
+        public static string PackageFeedPassword
+        {
+            get
+            {
+                return GetParameter("feedpassword", true);
+            }
+        }
+
         private static string GetParameter(string parameterName, bool allowMissing = false)
         {
             var launchArgument = GetLaunchArguments();
@@ -149,9 +180,21 @@ namespace ExeLauncher
 
             var args = Environment.GetCommandLineArgs();
 
+            if (args.Length < 2)
+            {
+                throw new Exception("Invalid launch arguments. Should be in format 'exelauncher PackageName -arg1 arg1val -arg2 arg2val'");
+            }
+            
+            result.Add("package", args[1]);
+
+            if (args.Length == 2)
+            {
+                return result;
+            }
+            
             try
             {
-                for (var index = 1; index < args.Length; index += 2)
+                for (var index = 2; index < args.Length; index += 2)
                 {
                     result.Add(args[index].Trim('-'), args[index + 1]);
                 }

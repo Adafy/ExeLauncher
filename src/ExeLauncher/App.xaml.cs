@@ -22,7 +22,7 @@ namespace ExeLauncher
 
             try
             {
-                var appName = Configuration.ApplicationName;
+                var packageName = Configuration.Package;
             }
             catch (Exception)
             {
@@ -30,8 +30,8 @@ namespace ExeLauncher
                 crashWindow.Show();
 
                 crashWindow.HandleStartupCrash(
-                    $"Application's name is missing. Please pass 'app' and 'package' parameters as arguments. {Environment.NewLine}{Environment.NewLine}app=Display name for the application {Environment.NewLine}package=Id of the app's nuget package{Environment.NewLine}{Environment.NewLine}" +
-                    $"Example: {Environment.NewLine}{Environment.NewLine}exelauncher -app \"My Application\" -package \"MyCompany.MyApplication\" ");
+                    $"Application's package information is missing. Please provide the package as a launch argument for ExeLauncher. {Environment.NewLine}{Environment.NewLine}package=Id of the app's nuget package{Environment.NewLine}{Environment.NewLine}" +
+                    $"Example: {Environment.NewLine}{Environment.NewLine}exelauncher \"MyCompany.MyApplication\" ");
 
                 return;
             }

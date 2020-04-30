@@ -81,9 +81,7 @@ namespace ExeLauncher
 
             if (!File.Exists(exePathFile))
             {
-                _logger.Error("Current executable file {ExeFile} is missing. Unknown state.", exePathFile);
-
-                throw new Exception($"Current executable file {exePathFile} is missing. Unknown state.");
+                return string.Empty;
             }
 
             return File.ReadAllText(exePathFile, Encoding.UTF8);
@@ -95,9 +93,7 @@ namespace ExeLauncher
 
             if (!File.Exists(rootFilePath))
             {
-                _logger.Error("Current root file {RootFile} is missing. Unknown state.", rootFilePath);
-
-                throw new Exception($"Current root file {rootFilePath} is missing. Unknown state.");
+                return string.Empty;
             }
 
             return File.ReadAllText(rootFilePath, Encoding.UTF8);
