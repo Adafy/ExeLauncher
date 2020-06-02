@@ -11,7 +11,7 @@
     <ToolCommandName>exelauncher</ToolCommandName>
     <PackageOutputPath>./bin/nupkg</PackageOutputPath>
     <Authors>Adafy Oy</Authors>
-    <Product>ExeLauncher.</Product>
+    <Product>ExeLauncher</Product>
     <Description>Launch Console and Windows apps packaged as NuGet packages. Keep them auto-updated.</Description>
     <PackageProjectUrl>https://github.com/Adafy/ExeLauncher</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Adafy/ExeLauncher</RepositoryUrl>
@@ -20,7 +20,17 @@
     <PackageIcon>logo_256.png</PackageIcon>
     <PackageTags>autoupdate updater launcher windows console</PackageTags>
     <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    <Configurations>Debug;Release;Exe</Configurations>
+    <Platforms>AnyCPU</Platforms>
+  </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)'=='Exe'">
+    <PackAsTool>false</PackAsTool>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishSingleFile>true</PublishSingleFile>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,10 +38,22 @@
     <PackageReference Include="Weikio.PluginFramework.Catalogs.NuGet" Version="1.0.0-alpha.0.9" />
     <PackageReference Include="NLog" Version="4.7.0" />
     <PackageReference Include="MinVer" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="3.1.4" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="../../docs/logo_256.png" Pack="true" Visible="false" PackagePath="" />
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
 </Project>

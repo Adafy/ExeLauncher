@@ -13,12 +13,12 @@ namespace ExeLauncher
         private string _applicationName;
         private readonly ILogger _logger = LogManager.GetCurrentClassLogger();
         private bool _useWin32ToDetectOpenWindow = true;
-        private readonly Func<string, bool, bool, bool?, Task> _statusUpdater;
+        private readonly Func<string, bool, bool, bool?, bool?, bool?, Task> _statusUpdater;
         private readonly LauncherStorageService _storageService;
         private readonly AutoUpdater _autoUpdater;
         private readonly PackageManager _packageManager;
 
-        public LauncherService(Func<string, bool, bool, bool?, Task> statusUpdater = null)
+        public LauncherService(Func<string, bool, bool, bool?, bool?, bool?, Task> statusUpdater = null)
         {
             _statusUpdater = statusUpdater;
             _applicationName = Configuration.ApplicationName;
@@ -33,7 +33,7 @@ namespace ExeLauncher
             _applicationName = Configuration.ApplicationName;
             _packageName = Configuration.Package;
 
-            _logger.Info("Application root folder is {AppRootFolder}", Configuration.ApplicationRootFolder(_applicationName));
+            _logger.Info("Application root folder is {AppRootFolder}", Configuration.GetApplicationRootFolder());
 
             try
             {
@@ -47,7 +47,7 @@ namespace ExeLauncher
                     {
                         _logger.Error(e,
                             "Failed to clean {AppRootFolder}. Quite likely some files are locked. Close the application or restart the computer and try again.",
-                            Configuration.ApplicationRootFolder(_applicationName));
+                            Configuration.GetApplicationRootFolder());
 
                         throw;
                     }
@@ -59,7 +59,7 @@ namespace ExeLauncher
 
                 if (initializationResult.IsFirstLaunch)
                 {
-                    await UpdateStatus("Preparing for the first launch...");
+                    await UpdateStatus("Preparing for the first launch...", isFirstLaunch: true);
                 }
 
                 var latestVersion = await _packageManager.Scan(initializationResult.CurrentVersion);
@@ -111,7 +111,6 @@ namespace ExeLauncher
 
                     if (!string.IsNullOrWhiteSpace(workingDirectory))
                     {
-
                         startInfo.WorkingDirectory = workingDirectory;
                     }
                     else
@@ -122,10 +121,11 @@ namespace ExeLauncher
             }
             catch (Exception e)
             {
-                _logger.Error(e, "Failed to set working directory for process. Default to application's root path {ApplicationRootPath}", _storageService.GetApplicationRootFolderPath());
+                _logger.Error(e, "Failed to set working directory for process. Default to application's root path {ApplicationRootPath}",
+                    _storageService.GetApplicationRootFolderPath());
                 startInfo.WorkingDirectory = _storageService.GetApplicationRootFolderPath();
             }
-            
+
             try
             {
                 if (!Directory.Exists(startInfo.WorkingDirectory))
@@ -135,7 +135,8 @@ namespace ExeLauncher
             }
             catch (Exception)
             {
-                _logger.Info("Working directory {WorkingDirectory} doesn't exists or it is invalid. Default to version root {VersionRoot}", startInfo.WorkingDirectory, _storageService.GetCurrentRoot());
+                _logger.Info("Working directory {WorkingDirectory} doesn't exists or it is invalid. Default to version root {VersionRoot}",
+                    startInfo.WorkingDirectory, _storageService.GetCurrentRoot());
 
                 startInfo.WorkingDirectory = _storageService.GetCurrentRoot();
             }
@@ -145,8 +146,8 @@ namespace ExeLauncher
                 _logger.Info("Configuration contains arguments. Adding the following into app's launch arguments: {Arguments}.", Configuration.Arguments);
 
                 startInfo.Arguments = Configuration.Arguments;
-            }                    
-            
+            }
+
             var process = Process.Start(startInfo);
 
             if (process != null)
@@ -217,14 +218,15 @@ namespace ExeLauncher
         [DllImport("user32.dll")]
         private static extern Boolean ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 
-        private async Task UpdateStatus(string status, bool? hasCrashed = false, bool? isReady = false, bool? appHasClosed = false)
+        private async Task UpdateStatus(string status, bool? hasCrashed = false, bool? isReady = false, bool? appHasClosed = false, bool? manualClose = false,
+            bool? isFirstLaunch = false)
         {
             if (_statusUpdater == null)
             {
                 return;
             }
 
-            await _statusUpdater(status, hasCrashed.GetValueOrDefault(), isReady.GetValueOrDefault(), appHasClosed);
+            await _statusUpdater(status, hasCrashed.GetValueOrDefault(), isReady.GetValueOrDefault(), appHasClosed, manualClose, isFirstLaunch);
         }
 
         private void UpdateCurrentExecutable()
@@ -235,12 +237,13 @@ namespace ExeLauncher
                 var pendingExe = _storageService.GetPendingExe();
                 var pendingRoot = _storageService.GetPendingVersionRootPath();
 
-                if (!string.IsNullOrWhiteSpace(Configuration.LaunchCommand) && !string.IsNullOrWhiteSpace(_storageService.GetCurrentExecutable()) && !string.IsNullOrWhiteSpace(_storageService.GetCurrentRoot()))
+                if (!string.IsNullOrWhiteSpace(Configuration.LaunchCommand) && !string.IsNullOrWhiteSpace(_storageService.GetCurrentExecutable()) &&
+                    !string.IsNullOrWhiteSpace(_storageService.GetCurrentRoot()))
                 {
                     var launchCommand = _storageService.GetCurrentRoot() + "/" + Configuration.LaunchCommand;
                     _storageService.UpdateCurrentVersionExe(launchCommand);
                 }
-                        
+
                 if (string.IsNullOrWhiteSpace(pendingExe) || string.IsNullOrWhiteSpace(pendingVersion))
                 {
                     return;

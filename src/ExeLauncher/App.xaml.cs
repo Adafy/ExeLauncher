@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using NLog;
 using NLog.Config;
 
@@ -20,6 +23,13 @@ namespace ExeLauncher
         {
             base.OnStartup(e);
 
+// #if EXE
+//             var hostFile = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+//             ConfigurationManager.OpenExeConfiguration(hostFile+".config");
+// #endif
+
+            Mouse.OverrideCursor = Cursors.Wait;
+            
             try
             {
                 var packageName = Configuration.Package;
@@ -29,24 +39,40 @@ namespace ExeLauncher
                 var crashWindow = new MainWindow();
                 crashWindow.Show();
 
+                var configFileLocation = typeof(MainWindow).Assembly.Location;
+
                 crashWindow.HandleStartupCrash(
                     $"Application's package information is missing. Please provide the package as a launch argument for ExeLauncher. {Environment.NewLine}{Environment.NewLine}package=Id of the app's nuget package{Environment.NewLine}{Environment.NewLine}" +
-                    $"Example: {Environment.NewLine}{Environment.NewLine}exelauncher \"MyCompany.MyApplication\" ");
+                    $"Example: {Environment.NewLine}{Environment.NewLine}exelauncher \"MyCompany.MyApplication\" " + Environment.NewLine + Environment.NewLine +
+                    $"Running folder of ExeLauncher is {configFileLocation}");
 
                 return;
             }
-            
-            InitializeLogging();
 
+            InitializeLogging();
+            var fullConfiguration = Configuration.GetFullConfiguration();
+            
+            _logger.Debug("Default configuration file path: {ConfigFilePath}. Application configuration file path: {ApplicationConfigFilePath}", Configuration.DefaultConfigurationFilePath, Configuration.ApplicationConfigurationFilePath);
+            _logger.Debug("Configuration:");
+
+            foreach (var config in fullConfiguration)
+            {
+                _logger.Debug("{ConfigKey}: {ConfigValue}", config.Key, config.Value);
+            }
+            
             var showUi = Configuration.ShowLauncher;
 
             IUpdateStatus statusUpdater = null;
 
-            if (showUi)
+            if (showUi == ShowLauncherEnum.Always || showUi == ShowLauncherEnum.FirstLaunch)
             {
                 _logger.Info("Gui is enabled. Displaying launcher window.");
                 var window = new MainWindow();
-                window.Show();
+
+                if (showUi == ShowLauncherEnum.Always)
+                {
+                    window.Show();
+                }
 
                 statusUpdater = window;
             }
@@ -60,16 +86,36 @@ namespace ExeLauncher
                 statusUpdater.LogPath = _logFileName;
             }
 
+            if (!string.IsNullOrWhiteSpace(Configuration.ExportPath))
+            {
+                statusUpdater?.UpdateStatus($"Exporting configuration to {Configuration.ExportPath}");
+
+                try
+                {
+                    var exporter = new ExporterService();
+
+                    exporter.Export();
+
+                    statusUpdater?.UpdateStatus($"Configuration exported to {Configuration.ExportPath}", manualClose: true);
+                }
+                catch (Exception)
+                {
+                    statusUpdater?.UpdateStatus($"Error when exporting configuration to {Configuration.ExportPath}");
+                }
+
+                return;
+            }
+
             try
             {
                 if (statusUpdater != null)
                 {
-                    _launcher = new LauncherService((statusText, hasCrashed, isReady, appHasClosed) =>
-                        statusUpdater.UpdateStatus(statusText, hasCrashed, isReady, appHasClosed));
+                    _launcher = new LauncherService((statusText, hasCrashed, isReady, appHasClosed, manualClose, isFirstLaunch) =>
+                        statusUpdater.UpdateStatus(statusText, hasCrashed, isReady, appHasClosed, manualClose, isFirstLaunch));
                 }
                 else
                 {
-                    _launcher = new LauncherService(async (statusText, hasCrashed, isReady, appHasClosed) =>
+                    _launcher = new LauncherService(async (statusText, hasCrashed, isReady, appHasClosed, manualClose, isFirstLaunch) =>
                     {
                         if (appHasClosed.GetValueOrDefault() == false)
                         {
@@ -94,7 +140,7 @@ namespace ExeLauncher
 
         private void InitializeLogging()
         {
-            var appRootFolder = Configuration.ApplicationRootFolder(Configuration.ApplicationName);
+            var appRootFolder = Configuration.GetApplicationRootFolder();
             var config = new LoggingConfiguration();
             _logFileName = Path.Combine(appRootFolder, "logs", "launcher.log");
 
