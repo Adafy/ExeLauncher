@@ -3,6 +3,7 @@ using System.Configuration;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using NLog;
 using NLog.Config;
 using Weikio.PluginFramework.Catalogs;
@@ -21,10 +22,15 @@ namespace ExeLauncher
         {
         }
 
-        public async Task UpdateStatus(string status, bool? hasCrashed = false, bool? isReady = false, bool? appHasClosed = false)
+        public async Task UpdateStatus(string status, bool? hasCrashed = false, bool? isReady = false, bool? appHasClosed = false, bool? manualClose = true, bool? isFirstLaunch = false)
         {
             await Application.Current.Dispatcher.BeginInvoke(new Action((() =>
             {
+                if (isFirstLaunch.GetValueOrDefault())
+                {
+                    Show();
+                }
+                
                 StatusTest.Text = status;
 
                 if (hasCrashed.GetValueOrDefault())
@@ -37,7 +43,6 @@ namespace ExeLauncher
                     {
                         StatusTest.Text += $"{Environment.NewLine}See log file for more details: {LogPath}";
                     }
-                            
 
                     return;
                 }
@@ -52,6 +57,15 @@ namespace ExeLauncher
                 if (appHasClosed.GetValueOrDefault())
                 {
                     Application.Current.Shutdown();
+                }
+                
+                if (manualClose.GetValueOrDefault())
+                {
+                    CloseButton.Visibility = Visibility.Visible;
+                    Ring.Visibility = Visibility.Collapsed;
+                    Visibility = Visibility.Visible;
+
+                    return;
                 }
             })));
         }

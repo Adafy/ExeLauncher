@@ -240,7 +240,7 @@ namespace ExeLauncher
             {
                 _logger.Error(e,
                     "Failed to clean {AppRootFolder}. Quite likely some files are locked. Close the application or restart the computer and try again.",
-                    Configuration.ApplicationRootFolder(_applicationName));
+                    Configuration.GetApplicationRootFolder());
 
                 throw;
             }
@@ -269,7 +269,7 @@ namespace ExeLauncher
 
         public string GetApplicationRootFolderPath()
         {
-            var result = Configuration.ApplicationRootFolder(_applicationName);
+            var result = Configuration.GetApplicationRootFolder();
             Directory.CreateDirectory(result);
 
             return result;
