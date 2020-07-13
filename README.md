@@ -53,28 +53,13 @@ Example of launching an app from command line without GUI, with a custom Nuget.c
 exelauncher MyApp.App -app "My Application" -gui "false" -nuget "C:\temp\NuGet.Config" -cmd "content\MyApp.exe" -args "-datadir c:\temp\mydb56"
 ```
 
-Example of configuring the ExeLauncher through config-file. All the paramters listed above can be used:
+Example of configuring the ExeLauncher through appsettings.json configuration file. All the parameters listed above can be used:
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-
-<configuration>
-
-    <appSettings>
-
-        <!-- Mandatory -->
-        <add key="app" value="" />
-        <add key="package" value="" />
-
-        <!-- Optional -->
-        <add key="cmd" value=""/> <!-- The launch command for your application. If empty, ExeLauncher scans for an .exe-file. -->
-        <add key="gui" value=""/> <!-- true or false. true = show launcher gui -->
-        <add key="nuget" value="C:\temp\NuGet.Config" /> <!--Path to Nuget.config. By default uses machine level configuration.-->
-        <add key="approot" value=""/> <!-- Application's root folder. The packages are downloaded and installed here. Defaults to AppData + app if missing. -->
-
-    </appSettings>
-
-</configuration>
+```json
+{
+  "package": "HourManagement.App", 
+  "feedurl": "https://pkgs.dev.azure.com/adafy/df962856-ce0c-4e96-8999-bee7c8b0582c/_packaging/AdafyPublic/nuget/v3/index.json"
+}
 ```
 
 ## Support
