@@ -16,8 +16,6 @@ namespace ExeLauncher
         public MainWindow()
         {
             InitializeComponent();
-            
-            Mouse.OverrideCursor = Cursors.AppStarting;
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)

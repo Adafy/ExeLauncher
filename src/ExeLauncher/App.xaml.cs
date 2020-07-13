@@ -28,8 +28,6 @@ namespace ExeLauncher
 //             ConfigurationManager.OpenExeConfiguration(hostFile+".config");
 // #endif
 
-            Mouse.OverrideCursor = Cursors.Wait;
-            
             try
             {
                 var packageName = Configuration.Package;
