@@ -58,7 +58,7 @@ Example of configuring the ExeLauncher through appsettings.json configuration fi
 ```json
 {
   "package": "HourManagement.App", 
-  "feedurl": "https://pkgs.dev.azure.com/adafy/df962856-ce0c-4e96-8999-bee7c8b0582c/_packaging/AdafyPublic/nuget/v3/index.json"
+  "feedurl": "https://pkgs.dev.azure.com/ada/df962e0c-4e96-8999-bee7c8b0582c/_packaging/Public/nuget/v3/index.json"
 }
 ```
 
